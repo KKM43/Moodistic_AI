@@ -1,0 +1,5 @@
+I built it because I needed it myself — that's why the safety features are thoughtful, not just ticked boxes.
+
+For crisis detection I chose deterministic code over AI — because safety features should never depend on a system that can fail.
+
+I know where the ceilings are — rate limits, database connections, cold starts — and the architecture is designed so each can be upgraded independently.
