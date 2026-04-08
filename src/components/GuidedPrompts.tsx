@@ -32,7 +32,6 @@ export default function GuidedPrompts({ onDismiss }: Props) {
         </div>
       )}
 
-
       {!selected && (
         <button
           className="prompts-toggle"
@@ -41,7 +40,6 @@ export default function GuidedPrompts({ onDismiss }: Props) {
           {visible ? "✕ hide" : "💭 not sure what to write?"}
         </button>
       )}
-
 
       {visible && !selected && (
         <div className="prompts-list animate-in">

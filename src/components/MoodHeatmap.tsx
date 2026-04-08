@@ -32,7 +32,6 @@ export default function MoodHeatmap({ entries }: Props) {
     );
   }
 
-  // Group entries by date
   const byDate = entries.reduce(
     (acc, entry) => {
       const date = new Date(entry.created_at).toISOString().split("T")[0];
@@ -57,7 +56,6 @@ export default function MoodHeatmap({ entries }: Props) {
   const startDate = new Date();
   startDate.setMonth(startDate.getMonth() - 6);
 
-  
   const getClass = (
     value: ReactCalendarHeatmapValue<string> | undefined,
   ): string => {
@@ -70,23 +68,33 @@ export default function MoodHeatmap({ entries }: Props) {
   };
 
   const getTooltip = (
-    value: ReactCalendarHeatmapValue<string> | undefined,
+    value: ReactCalendarHeatmapValue<string> | undefined | null,
   ): Record<string, string> => {
-    if (!value) {
+    if (!value || !value.date) {
       return {
         "data-tooltip-id": "mood-tip",
-        "data-tooltip-content": "",
+        "data-tooltip-content": "No entry on this day 🌱",
       };
     }
 
-    const v = value as HeatmapValue;
-    const date = new Date(v.date).toLocaleDateString("en-IN", {
+    const v = value as HeatmapValue | any;
+
+    if (!v.date || !v.mood) {
+      return {
+        "data-tooltip-id": "mood-tip",
+        "data-tooltip-content": "No entry on this day 🌱",
+      };
+    }
+
+    const dateStr = new Date(v.date).toLocaleDateString("en-IN", {
       day: "numeric",
       month: "short",
       year: "numeric",
     });
 
-    const content = `${date} · ${MOOD_LABELS[v.mood]} · "${v.preview}"`;
+    const moodLabel = MOOD_LABELS[v.mood] || "Unknown mood";
+
+    const content = `${dateStr} · ${moodLabel} · "${v.preview || "No preview available"}"`;
 
     return {
       "data-tooltip-id": "mood-tip",
@@ -103,16 +111,20 @@ export default function MoodHeatmap({ entries }: Props) {
         classForValue={getClass}
         tooltipDataAttrs={getTooltip}
         showWeekdayLabels={true}
+        gutterSize={4}
       />
       <Tooltip
         id="mood-tip"
         style={{
-          background: "#2d3748",
-          color: "#e8e8f0",
-          fontSize: "12px",
-          borderRadius: "8px",
-          maxWidth: "280px",
+          background: "#2c2416",
+          color: "#faf6f1",
+          borderRadius: "10px",
+          padding: "12px 16px",
+          maxWidth: "320px",
+          fontSize: "13.5px",
           lineHeight: "1.5",
+          zIndex: 100,
+          boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
         }}
       />
 
@@ -123,17 +135,6 @@ export default function MoodHeatmap({ entries }: Props) {
         <span className="legend-box color-mood-mid" />
         <span className="legend-box color-mood-high" />
         <span className="legend-label">More</span>
-        <div className="legend-items">
-          <span className="legend-item">
-            <span className="legend-box color-mood-low" /> Rough
-          </span>
-          <span className="legend-item">
-            <span className="legend-box color-mood-mid" /> Okay
-          </span>
-          <span className="legend-item">
-            <span className="legend-box color-mood-high" /> Good
-          </span>
-        </div>
       </div>
     </div>
   );

@@ -12,9 +12,13 @@ import ConfirmModal from "../components/ConfirmModal";
 import GuidedPrompts from "../components/GuidedPrompts";
 import { useLanguage } from "../hooks/useLanguage";
 import { OPENING_MESSAGES, UI_STRINGS } from "../lib/languages";
+import { buildUserMemory } from "../lib/memory";
 
 type SessionState = "mood" | "chatting" | "ending" | "ended";
 
+interface Props {
+  showHistory?: boolean;
+}
 
 const MOOD_EMOJIS: Record<number, string> = {
   1: "😞",
@@ -24,7 +28,7 @@ const MOOD_EMOJIS: Record<number, string> = {
   5: "😊",
 };
 
-export default function JournalPage() {
+export default function JournalPage({ showHistory = false }: Props) {
   const { user, signOut } = useAuth();
   const { entries, loadingEntries, fetchEntries, saveEntry } = useJournal(
     user?.id ?? "",
@@ -36,13 +40,14 @@ export default function JournalPage() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [isCrisis, setIsCrisis] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
+
   const [error, setError] = useState("");
   const [welcomeMessage, setWelcomeMessage] = useState("");
   const [welcomeLoading, setWelcomeLoading] = useState(true);
   const [showSignOutModal, setShowSignOutModal] = useState(false);
   const [showDiscardModal, setShowDiscardModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedEntry, setSelectedEntry] = useState<any>(null);
 
   const { language, setLanguage } = useLanguage();
   const ui = UI_STRINGS[language];
@@ -54,8 +59,16 @@ export default function JournalPage() {
   }, [user?.id]);
 
   useEffect(() => {
-    
     if (loadingEntries) return;
+
+    const timer = setTimeout(async () => {
+      setWelcomeLoading(true);
+      const msg = await getWelcomeMessage(entries);
+      setWelcomeMessage(msg);
+      setWelcomeLoading(false);
+    }, 100);
+
+    return () => clearTimeout(timer);
 
     const loadWelcome = async () => {
       setWelcomeLoading(true);
@@ -65,41 +78,25 @@ export default function JournalPage() {
     };
 
     loadWelcome();
-  }, [loadingEntries]); 
+  }, [loadingEntries]);
 
-  
-  useEffect(() => {
-    if (sessionState === "chatting" && messages.length === 1) {
-  
-      setMessages([
-        {
-          role: "assistant",
-          content: OPENING_MESSAGES[language],
-          timestamp: new Date(),
-        },
-      ]);
-    }
-  }, [language]);
-
-  
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
   const handleSignOutClick = () => {
-  
     if (sessionState === "chatting" && messages.length > 1) {
       setShowDiscardModal(true);
     } else {
-  
       setShowSignOutModal(true);
     }
   };
 
   const handleSaveAndSignOut = async () => {
     setShowDiscardModal(false);
-  
+
     await endSession();
+    await signOut();
     signOut();
   };
 
@@ -130,13 +127,11 @@ export default function JournalPage() {
     setInput("");
     setError("");
 
-  
     if (isCrisisEntry(userText)) {
       setIsCrisis(true);
       return;
     }
 
-  
     const userMessage: ChatMessage = {
       role: "user",
       content: userText,
@@ -148,17 +143,30 @@ export default function JournalPage() {
     setLoading(true);
 
     try {
-      const relevantPast = retrieveRelevantEntries(userText, entries);
+      const lastContext = messages
+        .slice(-3)
+        .map((m) => m.content)
+        .join(" ");
+
+      const ragInput = `${lastContext} ${userText}`;
+
+      const relevantPast = retrieveRelevantEntries(ragInput, entries, mood, 2);
+
+      console.log("RAG selected entries:", relevantPast);
+
+      const userMemory = buildUserMemory(entries);
+
       const response = await getChatResponse(
         updatedMessages,
         relevantPast,
         language,
+        userMemory,
       );
 
       setMessages((prev) => [
         ...prev,
         {
-          role: "assistant" as const,
+          role: "assistant",
           content: response,
           timestamp: new Date(),
         },
@@ -175,21 +183,25 @@ export default function JournalPage() {
   };
 
   const endSession = async () => {
-    if (messages.length < 3) return; 
+    if (messages.length < 3) return;
     setSessionState("ending");
 
     try {
-      
       const summary = await getSessionSummary(messages);
 
-      
       const fullConversation = messages
         .map((m) => `${m.role === "user" ? "You" : "MindShift"}: ${m.content}`)
         .join("\n\n");
 
-      await saveEntry(fullConversation, summary, mood);
-      setSessionState("ended");
-    } catch {
+      const { error } = await saveEntry(fullConversation, summary, mood);
+
+      if (error) {
+        setError("Could not save your entry. Please try again.");
+        setSessionState("chatting");
+      } else {
+        setSessionState("ended");
+      }
+    } catch (err) {
       setError("Could not save session. Please try again.");
       setSessionState("chatting");
     }
@@ -202,7 +214,6 @@ export default function JournalPage() {
     setInput("");
     setIsCrisis(false);
     setError("");
-    setShowHistory(false);
   };
 
   const formatDate = (dateStr: string) => {
@@ -220,6 +231,30 @@ export default function JournalPage() {
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const parseConversationToMessages = (content: string): ChatMessage[] => {
+    if (!content) return [];
+
+    const lines = content.split("\n\n");
+    return lines
+      .map((line) => {
+        if (line.startsWith("You:")) {
+          return {
+            role: "user" as const,
+            content: line.replace("You: ", ""),
+            timestamp: new Date(),
+          };
+        } else if (line.startsWith("MindShift:")) {
+          return {
+            role: "assistant" as const,
+            content: line.replace("MindShift: ", ""),
+            timestamp: new Date(),
+          };
+        }
+        return null;
+      })
+      .filter(Boolean) as ChatMessage[];
   };
 
   const filteredEntries =
@@ -255,21 +290,16 @@ export default function JournalPage() {
 
   return (
     <div className="journal-layout">
-      
       <Sidebar
         entryCount={entries.length}
-        onNewSession={startNewSession}
-        onPastSessions={() => setShowHistory(true)}
-        showHistory={showHistory}
-        onSignOut={handleSignOutClick}
         language={language}
         onLanguageChange={setLanguage}
+        onSignOutClick={handleSignOutClick}
       />
 
       <main className="journal-main">
         {!showHistory ? (
           <>
-            
             {sessionState === "mood" && (
               <div className="session-start animate-in">
                 <div className="welcome-block">
@@ -297,7 +327,6 @@ export default function JournalPage() {
               </div>
             )}
 
-
             {(sessionState === "chatting" || sessionState === "ending") && (
               <div className="chat-container">
                 <div className="chat-header">
@@ -323,7 +352,6 @@ export default function JournalPage() {
                   )}
                 </div>
 
-                
                 {isCrisis ? (
                   <div className="chat-crisis">
                     <CrisisSupport />
@@ -336,7 +364,6 @@ export default function JournalPage() {
                   </div>
                 ) : (
                   <>
-                    
                     <div
                       className="chat-messages"
                       role="region"
@@ -386,7 +413,6 @@ export default function JournalPage() {
                       <div ref={bottomRef} />
                     </div>
 
-                    
                     {sessionState === "chatting" && (
                       <div className="chat-input-area">
                         {messages.length === 1 && <GuidedPrompts />}
@@ -420,7 +446,6 @@ export default function JournalPage() {
               </div>
             )}
 
-            
             {sessionState === "ended" && (
               <div className="session-ended animate-in">
                 <div className="ended-icon">💙</div>
@@ -435,88 +460,149 @@ export default function JournalPage() {
             )}
           </>
         ) : (
-          /* Past sessions */
-
           <div className="history-view">
-            <h2 className="journal-title">Past Sessions</h2>
-            <p className="journal-subtitle">{entries.length} sessions so far</p>
+            {selectedEntry ? (
+              <div className="history-detail">
+                <div className="detail-header">
+                  <button
+                    className="back-btn"
+                    onClick={() => setSelectedEntry(null)}
+                  >
+                    ← Back to all sessions
+                  </button>
 
-            
-            <div className="search-wrap">
-              <input
-                className="search-input"
-                type="text"
-                placeholder="Search your sessions..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              {searchQuery && (
-                <button
-                  className="search-clear"
-                  onClick={() => setSearchQuery("")}
-                >
-                  ✕
-                </button>
-              )}
-            </div>
+                  <div
+                    style={{
+                      marginLeft: "auto",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "12px",
+                    }}
+                  >
+                    <span className="detail-mood">
+                      {MOOD_EMOJIS[selectedEntry.mood_score]}
+                    </span>
+                    <div>
+                      <div className="detail-date">
+                        {formatDate(selectedEntry.created_at)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-            
-            {searchQuery && (
-              <p className="search-results-count">
-                {filteredEntries.length === 0
-                  ? "No sessions found"
-                  : `${filteredEntries.length} session${
-                      filteredEntries.length === 1 ? "" : "s"
-                    } found`}
-              </p>
-            )}
+                <div className="detail-summary">
+                  <div className="detail-summary-label">Session Summary</div>
+                  <p
+                    className="entry-ai-text"
+                    style={{ fontSize: "15px", lineHeight: "1.7" }}
+                  >
+                    {selectedEntry.ai_response}
+                  </p>
+                </div>
 
-            
-            {filteredEntries.length === 0 && !searchQuery ? (
-              <div className="empty-history">
-                No sessions yet. Start your first one! 🌱
-              </div>
-            ) : filteredEntries.length === 0 ? (
-              <div className="empty-history">
-                Nothing found for "{searchQuery}" 🔍
+                <div className="detail-chat">
+                  <div className="chat-messages">
+                    {parseConversationToMessages(selectedEntry.content).map(
+                      (msg, i) => (
+                        <div
+                          key={i}
+                          className={`chat-bubble-wrap ${msg.role === "user" ? "user-wrap" : "ai-wrap"}`}
+                        >
+                          {msg.role === "assistant" && (
+                            <div className="chat-avatar">
+                              <img src="/icons/logo.png" alt="MindShift" />
+                            </div>
+                          )}
+                          <div
+                            className={`chat-bubble ${msg.role === "user" ? "bubble-user" : "bubble-ai"}`}
+                          >
+                            <div className="bubble-content">{msg.content}</div>
+                            <div className="bubble-timestamp">
+                              {formatMessageTime(msg.timestamp || new Date())}
+                            </div>
+                          </div>
+                        </div>
+                      ),
+                    )}
+                  </div>
+                </div>
               </div>
             ) : (
-              <div className="entries-list">
-                {filteredEntries.map((entry) => (
-                  <div key={entry.id} className="entry-card">
-                    <div className="entry-meta">
-                      <span className="entry-date">
-                        {formatDate(entry.created_at)}
-                      </span>
-                      <span
-                        className="entry-mood"
-                        aria-label={`Mood: ${Object.entries(MOOD_EMOJIS).find(([score]) => parseInt(score) === entry.mood_score)?.[0] || "unknown"}`}
-                      >
-                        {MOOD_EMOJIS[entry.mood_score]}
-                      </span>
-                    </div>
+              <>
+                <div>
+                  <h2 className="journal-title">Past Sessions</h2>
+                  <p className="journal-subtitle">
+                    {entries.length} reflections so far
+                  </p>
+                </div>
 
-                    <div className="entry-ai">
-                      <p className="entry-ai-label">SESSION SUMMARY</p>
-                      <p className="entry-ai-text">
-                        {highlightText(entry.ai_response, searchQuery)}
-                      </p>
-                    </div>
+                <div className="search-wrap">
+                  <input
+                    className="search-input"
+                    type="text"
+                    placeholder="Search your sessions..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  {searchQuery && (
+                    <button
+                      className="search-clear"
+                      onClick={() => setSearchQuery("")}
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
 
-                    <details className="entry-details">
-                      <summary className="entry-details-toggle">
-                        Read full conversation
-                      </summary>
-                      <p className="entry-content">{entry.content}</p>
-                    </details>
+                {searchQuery && (
+                  <p className="search-results-count">
+                    {filteredEntries.length} session
+                    {filteredEntries.length !== 1 ? "s" : ""} found
+                  </p>
+                )}
+
+                {filteredEntries.length === 0 ? (
+                  <div className="empty-history">
+                    {searchQuery
+                      ? `No matches for "${searchQuery}"`
+                      : "No sessions yet. Start your first one! 🌱"}
                   </div>
-                ))}
-              </div>
+                ) : (
+                  <div className="history-grid">
+                    {filteredEntries.map((entry) => (
+                      <div
+                        key={entry.id}
+                        className="entry-card"
+                        onClick={() => setSelectedEntry(entry)}
+                      >
+                        <div className="entry-meta">
+                          <span className="entry-date">
+                            {formatDate(entry.created_at)}
+                          </span>
+                          <span className="entry-mood">
+                            {MOOD_EMOJIS[entry.mood_score]}
+                          </span>
+                        </div>
+
+                        <div className="entry-ai">
+                          <p className="entry-ai-label">SESSION SUMMARY</p>
+                          <p className="entry-ai-text">
+                            {highlightText(
+                              entry.ai_response || "No summary available",
+                              searchQuery,
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}
       </main>
-      
+
       {showSignOutModal && (
         <ConfirmModal
           title="Sign out?"
@@ -529,7 +615,6 @@ export default function JournalPage() {
         />
       )}
 
-      
       {showDiscardModal && (
         <ConfirmModal
           title="You have an unsaved session"

@@ -6,7 +6,7 @@ export function useJournal(userId: string) {
   const [entries, setEntries] = useState<JournalEntry[]>([])
   const [loadingEntries, setLoadingEntries] = useState(false)
 
-  // past entries
+
   const fetchEntries = async () => {
     if (!userId) return
     setLoadingEntries(true)
@@ -20,7 +20,7 @@ export function useJournal(userId: string) {
     setLoadingEntries(false)
   }
 
-  // Saving new entry to Supabase
+
   const saveEntry = async (
     content: string,
     aiResponse: string,
@@ -38,7 +38,7 @@ export function useJournal(userId: string) {
       .single()
 
     if (!error && data) {
-      // Adding new entry to top
+
       setEntries((prev) => [data, ...prev])
     }
 

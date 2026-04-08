@@ -14,7 +14,6 @@ export default function ResetPasswordPage() {
   const [expired, setExpired] = useState(false);
 
   useEffect(() => {
-    
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
@@ -24,13 +23,11 @@ export default function ResetPasswordPage() {
       }
     });
 
-    
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log("Current session:", session);
       if (session) setReady(true);
     });
 
-    
     const timeout = setTimeout(() => {
       setExpired(true);
     }, 8000);

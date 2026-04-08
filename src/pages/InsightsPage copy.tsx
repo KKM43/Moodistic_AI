@@ -1,18 +1,18 @@
-import { useAuth } from '../hooks/useAuth'
-import { useJournal } from '../hooks/useJournal'
-import { useEffect } from 'react'
-import MoodChart from '../components/MoodChart'
-import MoodStats from '../components/MoodStats'
-import Sidebar from '../components/Sidebar'
-import MoodHeatmap from '../components/MoodHeatmap'
+import { useAuth } from "../hooks/useAuth";
+import { useJournal } from "../hooks/useJournal";
+import { useEffect } from "react";
+import MoodChart from "../components/MoodChart";
+import MoodStats from "../components/MoodStats";
+import Sidebar from "../components/Sidebar";
+import MoodHeatmap from "../components/MoodHeatmap";
 
 export default function InsightsPage() {
-  const { user } = useAuth()
-  const { entries, loadingEntries, fetchEntries } = useJournal(user?.id ?? '')
+  const { user } = useAuth();
+  const { entries, loadingEntries, fetchEntries } = useJournal(user?.id ?? "");
 
   useEffect(() => {
-    if (user?.id) fetchEntries()
-  }, [user?.id])
+    if (user?.id) fetchEntries();
+  }, [user?.id]);
 
   return (
     <div className="journal-layout">
@@ -36,12 +36,12 @@ export default function InsightsPage() {
                 <h3 className="section-heading">Mood Over Time</h3>
                 <MoodChart entries={entries} />
                 <div className="chart-section">
-  <h3 className="section-heading">6-Month Mood Calendar</h3>
-  <p className="section-subheading">
-    Each square is a day. Hover to see what you wrote.
-  </p>
-  <MoodHeatmap entries={entries} />
-</div>
+                  <h3 className="section-heading">6-Month Mood Calendar</h3>
+                  <p className="section-subheading">
+                    Each square is a day. Hover to see what you wrote.
+                  </p>
+                  <MoodHeatmap entries={entries} />
+                </div>
               </div>
               <div className="chart-section">
                 <h3 className="section-heading">Recent Reflections</h3>
@@ -55,17 +55,24 @@ export default function InsightsPage() {
                       <div key={entry.id} className="insight-entry-card">
                         <div className="entry-meta">
                           <span className="entry-date">
-                            {new Date(entry.created_at).toLocaleDateString('en-IN', {
-                              day: 'numeric', month: 'short', year: 'numeric'
-                            })}
+                            {new Date(entry.created_at).toLocaleDateString(
+                              "en-IN",
+                              {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                              },
+                            )}
                           </span>
                           <span className="entry-mood">
-                            {['', '😞', '😕', '😐', '🙂', '😊'][entry.mood_score]}
+                            {
+                              ["", "😞", "😕", "😐", "🙂", "😊"][
+                                entry.mood_score
+                              ]
+                            }
                           </span>
                         </div>
-                        <p className="entry-content">
-                          {entry.ai_response}
-                        </p>
+                        <p className="entry-content">{entry.ai_response}</p>
                       </div>
                     ))}
                   </div>
@@ -76,5 +83,5 @@ export default function InsightsPage() {
         </div>
       </main>
     </div>
-  )
+  );
 }

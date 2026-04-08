@@ -22,7 +22,7 @@ export const LANGUAGES: LanguageOption[] = [
 ]
 
 export const LANGUAGE_INSTRUCTIONS: Record<AppLanguage, string> = {
-  en: '', 
+  en: '',
   hi: `IMPORTANT: Respond entirely in Hindi (हिन्दी).
 Use informal, warm Hindi like you'd text a close friend.
 If the user writes in Roman script (English letters for Hindi words like "kya chal raha hai"),
@@ -45,9 +45,11 @@ Never mix English sentences — pure conversational Marathi only.`
 }
 
 export const OPENING_MESSAGES: Record<AppLanguage, string> = {
-  en: "hey, glad you're here. what's going on?",
-  hi: "यार, अच्छा लगा कि तुम आए। बताओ, क्या चल रहा है?",
-  mr: "अरे, बरं वाटलं की तू आलास. सांग, काय चाललंय?"
+  en: "hey... I'm right here with you. what's been on your mind?",
+
+  hi: "हां... मैं यहीं हूँ तुम्हारे साथ। क्या चल रहा है दिमाग में?",
+
+  mr: "हं... मी इथेच आहे तुझ्यासोबत. काय चाललंय मनात?"
 }
 
 export const UI_STRINGS: Record<AppLanguage, {

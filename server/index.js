@@ -4,21 +4,22 @@ require("dotenv").config();
 
 const app = express();
 
+console.log("GROQ_API_KEY exists:", !!process.env.GROQ_API_KEY);
+console.log("GROQ_API_KEY starts with:", process.env.GROQ_API_KEY?.slice(0, 8));
+
 app.use(
   cors({
     origin: [
       "http://localhost:5173",
       "http://localhost:4173",
-      process.env.FRONTEND_URL, 
+      process.env.FRONTEND_URL,
     ].filter(Boolean),
   }),
 );
 
 app.use(express.json({ limit: "10mb" }));
 
-
 app.get("/health", (_, res) => res.json({ status: "ok" }));
-
 
 app.post("/api/chat", async (req, res) => {
   const { messages, systemPrompt } = req.body;
@@ -27,7 +28,6 @@ app.post("/api/chat", async (req, res) => {
     return res.status(400).json({ error: "Missing messages or systemPrompt" });
   }
 
-  
   const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
   const now = Date.now();
 

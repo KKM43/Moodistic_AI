@@ -22,15 +22,29 @@ export default function App() {
         path="/auth"
         element={!user ? <AuthPage /> : <Navigate to="/journal" replace />}
       />
+
       <Route
         path="/journal"
         element={user ? <JournalPage /> : <Navigate to="/auth" replace />}
       />
+
+      <Route
+        path="/past-sessions"
+        element={
+          user ? (
+            <JournalPage showHistory={true} />
+          ) : (
+            <Navigate to="/auth" replace />
+          )
+        }
+      />
+
       <Route
         path="/insights"
         element={user ? <InsightsPage /> : <Navigate to="/auth" replace />}
       />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
+
       <Route
         path="*"
         element={<Navigate to={user ? "/journal" : "/auth"} replace />}

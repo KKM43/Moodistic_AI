@@ -13,23 +13,26 @@ export default function MoodStats({ entries }: Props) {
     if (entries.length === 0) return;
 
     const correct = async () => {
-      const corrected = await Promise.all(
-        entries.map(async (entry) => {
-          const mismatch = await checkMoodMismatch(
-            entry.content,
-            entry.mood_score,
-          );
-          return {
-            ...entry,
-            mood_score:
-              mismatch === "masked"
-                ? 2
-                : mismatch === "reverse_masked"
-                  ? 4
-                  : entry.mood_score,
-          };
-        }),
-      );
+      const toAnalyze = entries.slice(0, 10);
+      const corrected: JournalEntry[] = [];
+
+      for (const entry of toAnalyze) {
+        const mismatch = await checkMoodMismatch(
+          entry.content,
+          entry.mood_score,
+        );
+        corrected.push({
+          ...entry,
+          mood_score:
+            mismatch === "masked"
+              ? 2
+              : mismatch === "reverse_masked"
+                ? 4
+                : entry.mood_score,
+        });
+        await new Promise((resolve) => setTimeout(resolve, 300));
+      }
+
       setHonestEntries(corrected);
     };
 
@@ -38,7 +41,6 @@ export default function MoodStats({ entries }: Props) {
 
   if (entries.length === 0) return null;
 
-  // Using honestEntries if AI has finished else fall back to raw entries
   const data = honestEntries.length > 0 ? honestEntries : entries;
 
   const calcStreak = () => {
@@ -69,37 +71,57 @@ export default function MoodStats({ entries }: Props) {
         break;
       }
     }
-
     return streak;
   };
 
   const avgMood = (
     data.reduce((sum, e) => sum + e.mood_score, 0) / data.length
   ).toFixed(1);
-
   const bestMood = Math.max(...data.map((e) => e.mood_score));
   const streak = calcStreak();
 
   const MOOD_LABELS: Record<number, string> = {
-    1: "Really rough",
-    2: "Not great",
+    1: "Really Rough",
+    2: "Not Great",
     3: "Okay",
-    4: "Pretty good",
+    4: "Pretty Good",
     5: "Great",
   };
 
   const stats = [
-    { label: "Total Entries", value: entries.length, icon: "📝" },
-    { label: "Day Streak", value: `${streak} 🔥`, icon: "📅" },
-    { label: "Average Mood", value: `${avgMood}/5`, icon: "💭" },
-    { label: "Best Mood", value: MOOD_LABELS[bestMood], icon: "⭐" },
+    {
+      label: "Total Entries",
+      value: entries.length,
+      icon: "📝",
+      color: "var(--terra)",
+    },
+    {
+      label: "Day Streak",
+      value: `${streak} 🔥`,
+      icon: "📅",
+      color: "var(--sage)",
+    },
+    {
+      label: "Average Mood",
+      value: `${avgMood}/5`,
+      icon: "💭",
+      color: "var(--amber)",
+    },
+    {
+      label: "Best Mood",
+      value: MOOD_LABELS[bestMood] || "Great",
+      icon: "⭐",
+      color: "var(--terra)",
+    },
   ];
 
   return (
     <div className="stats-grid">
-      {stats.map((stat) => (
-        <div key={stat.label} className="stat-card">
-          <span className="stat-icon">{stat.icon}</span>
+      {stats.map((stat, index) => (
+        <div key={index} className="stat-card premium">
+          <div className="stat-icon-wrapper">
+            <span className="stat-icon">{stat.icon}</span>
+          </div>
           <span className="stat-value">{stat.value}</span>
           <span className="stat-label">{stat.label}</span>
         </div>

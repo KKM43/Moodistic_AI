@@ -5,31 +5,24 @@ import type { AppLanguage } from "../types";
 
 interface Props {
   entryCount?: number;
-  onNewSession?: () => void;
-  onPastSessions?: () => void;
-  showHistory?: boolean;
-  onSignOut?: () => void;
   language?: AppLanguage;
   onLanguageChange?: (lang: AppLanguage) => void;
+  onSignOutClick?: () => void;
 }
 
 export default function Sidebar({
   entryCount = 0,
-  onNewSession,
-  onPastSessions,
-  showHistory = false,
-  onSignOut,
   language = "en",
   onLanguageChange,
+  onSignOutClick,
 }: Props) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut } = useAuth();
 
   const isJournal = location.pathname === "/journal";
+  const isPastSessions = location.pathname === "/past-sessions";
   const isInsights = location.pathname === "/insights";
-
-  const handleSignOut = onSignOut ?? signOut;
 
   return (
     <aside className="sidebar">
@@ -38,35 +31,25 @@ export default function Sidebar({
         <span className="sidebar-title">MindShift</span>
       </div>
 
-      
       <div className="sidebar-user">
-        {" "}
         Hey{" "}
         {user?.user_metadata?.full_name
           ? user.user_metadata.full_name.split(" ")[0]
-          : user?.email}
+          : user?.email?.split("@")[0]}
         !
       </div>
 
       <nav className="sidebar-nav">
         <button
-          className={`nav-btn ${isJournal && !showHistory ? "nav-active" : ""}`}
-          onClick={() => {
-            if (isJournal) onNewSession?.();
-            else navigate("/journal");
-          }}
+          className={`nav-btn ${isJournal && !isPastSessions ? "nav-active" : ""}`}
+          onClick={() => navigate("/journal")}
         >
           ✏️ New Session
         </button>
 
         <button
-          className={`nav-btn ${isJournal && showHistory ? "nav-active" : ""}`}
-          onClick={() => {
-            if (isJournal) onPastSessions?.();
-            else {
-              navigate("/journal");
-            }
-          }}
+          className={`nav-btn ${isPastSessions ? "nav-active" : ""}`}
+          onClick={() => navigate("/past-sessions")}
         >
           📖 Past Sessions
           {entryCount > 0 && <span className="entry-count">{entryCount}</span>}
@@ -79,7 +62,6 @@ export default function Sidebar({
           📈 Insights
         </button>
 
-        
         {onLanguageChange && (
           <div className="sidebar-lang">
             <p className="sidebar-lang-label">Language</p>
@@ -88,7 +70,7 @@ export default function Sidebar({
         )}
       </nav>
 
-      <button className="signout-btn" onClick={handleSignOut}>
+      <button className="signout-btn" onClick={onSignOutClick || signOut}>
         Sign Out
       </button>
     </aside>

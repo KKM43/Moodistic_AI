@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../hooks/useAuth";
+import { supabase } from "../lib/supabase";
 
 export default function AuthPage() {
   const { signIn, signUp, signInWithGoogle, forgotPassword } = useAuth();
@@ -35,9 +36,37 @@ export default function AuthPage() {
 
     if (isLogin) {
       const { error } = await signIn(email, password);
-      if (error) setError(error.message);
+
+      if (error) {
+        const { error: otpError } = await supabase.auth.signInWithOtp({
+          email,
+          options: { shouldCreateUser: false },
+        });
+
+        if (!otpError) {
+          setError(
+            "Looks like you signed up with Google — try using Google login 🙂",
+          );
+        } else {
+          setError("Invalid email or password.");
+        }
+      }
     } else {
+      const { error: otpError } = await supabase.auth.signInWithOtp({
+        email,
+        options: { shouldCreateUser: false },
+      });
+
+      if (!otpError) {
+        setError(
+          "An account already exists. Try logging in or use Google sign-in.",
+        );
+        setLoading(false);
+        return;
+      }
+
       const { error } = await signUp(email, password);
+
       if (error) {
         setError(error.message);
       } else {
@@ -46,6 +75,7 @@ export default function AuthPage() {
         );
       }
     }
+
     setLoading(false);
   };
 
@@ -58,7 +88,6 @@ export default function AuthPage() {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        
         {showForgot ? (
           <div className="forgot-wrap">
             {!forgotSent ? (
@@ -121,7 +150,6 @@ export default function AuthPage() {
             )}
           </div>
         ) : (
-        
           <>
             <div className="auth-brand">
               <img
@@ -135,7 +163,6 @@ export default function AuthPage() {
               </p>
             </div>
 
-        
             <div className="auth-tabs">
               <button
                 className={`auth-tab ${isLogin ? "active" : ""}`}
@@ -159,7 +186,6 @@ export default function AuthPage() {
               </button>
             </div>
 
-        
             <form className="auth-form" onSubmit={handleSubmit}>
               <div className="form-group">
                 <label className="form-label">Email</label>
@@ -197,7 +223,6 @@ export default function AuthPage() {
               </button>
             </form>
 
-        
             {isLogin && (
               <button
                 className="forgot-link"
@@ -210,12 +235,10 @@ export default function AuthPage() {
               </button>
             )}
 
-        
             <div className="auth-divider">
               <span>or</span>
             </div>
 
-        
             <button className="google-btn" onClick={handleGoogle}>
               <img
                 src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"

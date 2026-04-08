@@ -6,26 +6,41 @@ export async function getWelcomeMessage(
 
   const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001'
 
-  
   if (entries.length === 0) {
-    return "Hey, welcome to MindShift! This is your private space — no judgment, no pressure. Whenever you're ready, just start talking."
+    return "hey, welcome to MindShift! this is your private space — no judgment, no pressure. whenever you're ready, just start talking."
   }
 
-  const lastEntry = entries[0] 
+  const lastEntry = entries[0]
+
+
+  let cacheKey: string | null = null
+  let cached: string | null = null
+
+  if (lastEntry?.id) {
+    cacheKey = `welcome_${lastEntry.id}`
+    cached = localStorage.getItem(cacheKey)
+
+
+
+    if (cached) {
+
+      return cached
+    }
+  }
+
   const daysSinceLast = Math.floor(
     (Date.now() - new Date(lastEntry.created_at).getTime()) / 86400000
   )
 
   const isMonday = new Date().getDay() === 1
 
-  
   const weekAgo = new Date()
   weekAgo.setDate(weekAgo.getDate() - 7)
+
   const weekEntries = entries.filter(e =>
     new Date(e.created_at) >= weekAgo
   )
 
-  
   const streak = calcStreak(entries)
 
   const systemPrompt =
@@ -50,7 +65,7 @@ Rules:
 - Max 2 sentences
 - Sound like a friend who genuinely remembers them — not a chatbot
 - Lowercase — like a text message from a close friend
-- Never be generic ("Hope you're doing well!")
+- Never be generic
 - No emojis except one at the end if natural
 - If they've been away a while, acknowledge it gently without guilt
 - If they have a streak, mention it briefly
@@ -63,39 +78,47 @@ Context:
   try {
     const response = await fetch(`${API_URL}/api/chat`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        systemPrompt: systemPrompt,
+        systemPrompt,
         messages: [
-          {
-            role: 'system',
-            content: systemPrompt
-          },
-          {
-            role: 'user',
-            content: 'Write a welcome back message for this user.'
-          }
+          { role: 'user', content: 'Write a welcome back message for this user.' }
         ]
       })
     })
 
     const data = await response.json()
-    return data.choices[0].message.content.trim()
+
+
+    const message = data?.content?.trim() || fallbackMessage(daysSinceLast, streak)
+
+    if (cacheKey && message !== fallbackMessage(daysSinceLast, streak)) {
+      Object.keys(localStorage)
+        .filter(k => k.startsWith('welcome_'))
+        .forEach(k => localStorage.removeItem(k))
+      localStorage.setItem(cacheKey, message)
+
+    }
+
+    return message
 
   } catch {
-    
-    if (daysSinceLast === 0) return "Good to see you again today. Ready when you are."
-    if (daysSinceLast === 1) return "You're back — glad you showed up again."
-    if (daysSinceLast <= 3) return `It's been ${daysSinceLast} days. How have things been?`
-    if (streak > 3) return `${streak} days in a row — that consistency matters more than you think.`
-    return `It's been a little while. No pressure — just glad you're here.`
+    return fallbackMessage(daysSinceLast, streak)
   }
+}
+
+
+function fallbackMessage(daysSinceLast: number, streak: number): string {
+  if (daysSinceLast === 0) return "good to see you again today. ready when you are."
+  if (daysSinceLast === 1) return "you're back — glad you showed up again."
+  if (daysSinceLast <= 3) return `it's been ${daysSinceLast} days. how have things been?`
+  if (streak > 3) return `${streak} days in a row — that consistency matters more than you think.`
+  return "it's been a little while. no pressure — just glad you're here."
 }
 
 function calcStreak(entries: JournalEntry[]): number {
   if (entries.length === 0) return 0
+
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
