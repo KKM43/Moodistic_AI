@@ -39,7 +39,7 @@ export default function InsightsPage() {
               <MoodStats entries={entries} />
               <InsightsCard insights={insights} loading={insightsLoading} />
 
-              <MoodStats entries={entries} />
+              
 
               <div className="dashboard-grid">
                 <div className="dashboard-card mood-trend-card">
