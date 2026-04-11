@@ -9,19 +9,18 @@ if (!process.env.GROQ_API_KEY) {
 
 if (!process.env.FRONTEND_URL) {
   console.warn(
-    "⚠️  FRONTEND_URL is not set. CORS may be too permissive in production.",
+    "⚠️ FRONTEND_URL is not set. CORS may be too permissive in production.",
   );
 }
 
 const app = express();
 
 
-
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:4173",
-  "https://moodistic-omega.vercel.app",     
-  "https://moodistic.vercel.app",           
+  "https://moodistic-omega.vercel.app",
+  "https://moodistic.vercel.app",
   process.env.FRONTEND_URL,
 ].filter(Boolean);
 
@@ -38,22 +37,13 @@ app.use(
     credentials: true,
     methods: ["GET", "POST", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-  })
+  }),
 );
 
 
 app.options("/*splat", cors());
 
 app.use(express.json({ limit: "10mb" }));
-
-
-app.options("*", (req, res) => {
-  res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
-  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  res.sendStatus(200);
-});
-
 app.set("trust proxy", 1);
 
 app.get("/", (_, res) => {
@@ -62,6 +52,8 @@ app.get("/", (_, res) => {
 
 app.get("/health", (_, res) => res.json({ status: "ok" }));
 
+
+
 app.post("/api/analyze-mood-honesty", async (req, res) => {
   const { entries } = req.body;
 
@@ -69,12 +61,13 @@ app.post("/api/analyze-mood-honesty", async (req, res) => {
     return res.status(400).json({ error: "Missing or invalid entries array" });
   }
 
-  
-  const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown";
+  const ip =
+    req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown";
   const now = Date.now();
   const oneDayMs = 24 * 60 * 60 * 1000;
 
-  if (!app.locals.moodAnalysisRateLimits) app.locals.moodAnalysisRateLimits = new Map();
+  if (!app.locals.moodAnalysisRateLimits)
+    app.locals.moodAnalysisRateLimits = new Map();
   const limits = app.locals.moodAnalysisRateLimits;
 
   let userLimit = limits.get(ip);
@@ -87,9 +80,9 @@ app.post("/api/analyze-mood-honesty", async (req, res) => {
   userLimit.count++;
   limits.set(ip, userLimit);
 
-  if (userLimit.count > 50) {   
-    return res.status(429).json({ 
-      error: "Too many analysis requests. Please try again later." 
+  if (userLimit.count > 50) {
+    return res.status(429).json({
+      error: "Too many analysis requests. Please try again later.",
     });
   }
 
@@ -175,7 +168,6 @@ Support English, Hindi, Marathi.`,
     return res.json({ analysis });
   } catch (err) {
     console.error("Mood honesty batch error:", err);
-
     return res.json({
       analysis: entries.map((_, i) => ({ index: i, result: "honest" })),
     });
@@ -189,8 +181,8 @@ app.post("/api/chat", async (req, res) => {
     return res.status(400).json({ error: "Missing messages or systemPrompt" });
   }
 
-    // Daily rate limiting for chat (20 messages per day)
-  const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown";
+  const ip =
+    req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown";
   const now = Date.now();
   const oneDayMs = 24 * 60 * 60 * 1000;
 
@@ -208,8 +200,9 @@ app.post("/api/chat", async (req, res) => {
   limits.set(ip, userLimit);
 
   if (userLimit.count > 20) {
-    return res.status(429).json({ 
-      error: "You've reached your daily limit of 20 messages. Come back tomorrow 🌱" 
+    return res.status(429).json({
+      error:
+        "You've reached your daily limit of 20 messages. Come back tomorrow 🌱",
     });
   }
 
