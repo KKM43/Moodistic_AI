@@ -7,6 +7,7 @@ import Sidebar from "../components/Sidebar";
 import MoodHeatmap from "../components/MoodHeatmap";
 import { useInsights } from "../hooks/useInsights";
 import InsightsCard from "../components/InsightsCard";
+import { useNavigate } from "react-router-dom";
 
 export default function InsightsPage() {
   const { user } = useAuth();
@@ -14,6 +15,8 @@ export default function InsightsPage() {
   const { insights, loading: insightsLoading } = useInsights(
     loadingEntries ? [] : entries,
   );
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (user?.id) fetchEntries();
@@ -86,7 +89,26 @@ export default function InsightsPage() {
                               ? entry.ai_response.slice(0, 120) + "..."
                               : entry.ai_response || "No summary yet."}
                           </p>
-                          <span className="view-in-past">
+
+                          <span
+                            className="view-in-past"
+                            onClick={() =>
+                              navigate(`/past-sessions?entryId=${entry.id}`)
+                            }
+                            style={{
+                              cursor: "pointer",
+                              color: "var(--terra)",
+                              textDecoration: "underline",
+                              fontWeight: 500,
+                            }}
+                            onMouseOver={(e) =>
+                              (e.currentTarget.style.textDecoration = "none")
+                            }
+                            onMouseOut={(e) =>
+                              (e.currentTarget.style.textDecoration =
+                                "underline")
+                            }
+                          >
                             View full entry in Past Sessions →
                           </span>
                         </div>

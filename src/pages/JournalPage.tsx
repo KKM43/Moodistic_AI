@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useJournal } from "../hooks/useJournal";
 import { getChatResponse, getSessionSummary, checkRateLimit } from "../lib/ai";
@@ -48,6 +49,7 @@ export default function JournalPage({ showHistory = false }: Props) {
   const [showDiscardModal, setShowDiscardModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedEntry, setSelectedEntry] = useState<any>(null);
+  const [searchParams] = useSearchParams();
 
   const { language, setLanguage } = useLanguage();
   const ui = UI_STRINGS[language];
@@ -57,6 +59,24 @@ export default function JournalPage({ showHistory = false }: Props) {
   useEffect(() => {
     if (user?.id) fetchEntries();
   }, [user?.id]);
+
+  
+
+useEffect(() => {
+  if (!showHistory || loadingEntries || entries.length === 0) return;
+
+  const entryId = searchParams.get("entryId");
+  if (!entryId) return;
+
+  const foundEntry = entries.find((entry) => entry.id === entryId);
+
+  if (foundEntry) {
+    setSelectedEntry(foundEntry);
+    
+    window.history.replaceState({}, "", "/past-sessions");
+  }
+}, [showHistory, loadingEntries, entries, searchParams]);
+
 
   useEffect(() => {
     const handlePopState = () => {
@@ -118,9 +138,9 @@ export default function JournalPage({ showHistory = false }: Props) {
   }, [messages, loading]);
 
   const handleSignOutWithoutSaving = async () => {
-  setShowDiscardModal(false);
-  await signOut();   // Just sign out, discard current session
-};
+    setShowDiscardModal(false);
+    await signOut(); // Just sign out, discard current session
+  };
 
   const handleSignOutClick = () => {
     if (sessionState === "chatting" && messages.length > 1) {
@@ -640,32 +660,32 @@ export default function JournalPage({ showHistory = false }: Props) {
       </main>
 
       {/* Sign Out Modal (Normal case) */}
-{showSignOutModal && (
-  <ConfirmModal
-    title="Sign out?"
-    message="You'll need to log back in to access your journal."
-    confirmLabel="Yes, sign out"
-    cancelLabel="Stay"
-    danger={true}
-    onConfirm={signOut}
-    onCancel={() => setShowSignOutModal(false)}
-  />
-)}
+      {showSignOutModal && (
+        <ConfirmModal
+          title="Sign out?"
+          message="You'll need to log back in to access your journal."
+          confirmLabel="Yes, sign out"
+          cancelLabel="Stay"
+          danger={true}
+          onConfirm={signOut}
+          onCancel={() => setShowSignOutModal(false)}
+        />
+      )}
 
-{/* Discard / Unsaved Session Modal - Now with 3 options */}
-{showDiscardModal && (
-  <ConfirmModal
-    title="Unsaved Session"
-    message="You have an ongoing conversation that hasn't been saved yet."
-    confirmLabel="Save & Sign Out"
-    cancelLabel="Cancel"
-    thirdLabel="Sign Out Without Saving"
-    thirdDanger={true}
-    onConfirm={handleSaveAndSignOut}
-    onThirdAction={handleSignOutWithoutSaving}
-    onCancel={() => setShowDiscardModal(false)}
-  />
-)}
+      {/* Discard / Unsaved Session Modal - Now with 3 options */}
+      {showDiscardModal && (
+        <ConfirmModal
+          title="Unsaved Session"
+          message="You have an ongoing conversation that hasn't been saved yet."
+          confirmLabel="Save & Sign Out"
+          cancelLabel="Cancel"
+          thirdLabel="Sign Out Without Saving"
+          thirdDanger={true}
+          onConfirm={handleSaveAndSignOut}
+          onThirdAction={handleSignOutWithoutSaving}
+          onCancel={() => setShowDiscardModal(false)}
+        />
+      )}
     </div>
   );
 }

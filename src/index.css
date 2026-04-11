@@ -103,7 +103,7 @@ body {
   overflow: hidden;
 }
 
-/* Decorative corner flourish on auth card */
+
 .auth-card::before {
   content: '';
   position: absolute;
@@ -561,7 +561,7 @@ body {
   font-weight: 300;
 }
 
-/* ── Mood Selector — redesigned ── */
+
 .mood-selector { margin-bottom: 28px; }
 
 .mood-label {
@@ -1346,7 +1346,7 @@ body {
 }
 
 
-/* ── Polished Insights + Interactions ── */
+/*Insights + Interactions ── */
 .insights-dashboard {
   display: flex;
   flex-direction: column;
@@ -2144,7 +2144,7 @@ body::after {
 
   .mobile-hamburger {
     display: block;
-    position: fixed;           /* Changed to fixed */
+    position: fixed;          
     top: 16px;
     left: 16px;
     background: var(--paper);
@@ -2166,7 +2166,7 @@ body::after {
     width: 100%;
   }
 
-  /* Overlay when drawer is open */
+  
   .sidebar-overlay {
     position: fixed;
     inset: 0;
@@ -2183,7 +2183,7 @@ body::after {
   }
 }
 
-/* Make sure nav buttons are touch-friendly on mobile */
+
 @media (max-width: 640px) {
   .nav-btn, .signout-btn {
     padding: 14px 16px;
@@ -2198,7 +2198,7 @@ body::after {
 
 
 
-/* ── Phase 2: Mobile Journal Experience ── */
+
 
 @media (max-width: 640px) {
   .journal-main {
@@ -2213,7 +2213,7 @@ body::after {
     font-size: 24px;
   }
 
-  /* Mood Selector - Larger touch targets */
+  
   .mood-selector {
     margin-bottom: 24px;
   }
@@ -2244,7 +2244,7 @@ body::after {
 
   /* Chat Container */
   .chat-container {
-    height: calc(100vh - 140px); /* Better height on mobile */
+    height: calc(100vh - 140px); 
   }
 
   .chat-header {
@@ -2277,7 +2277,7 @@ body::after {
     border-radius: 20px 20px 20px 6px;
   }
 
-  /* Chat Input Area - Fixed at bottom */
+  
   .chat-input-area {
     position: fixed;
     bottom: 0;
@@ -2293,7 +2293,7 @@ body::after {
   .chat-input {
     border-radius: 24px;
     padding: 14px 18px;
-    font-size: 16px; /* Better for mobile typing */
+    font-size: 16px; 
     min-height: 52px;
   }
 
@@ -2324,7 +2324,7 @@ body::after {
   }
 }
 
-/* Extra safety for very small screens */
+
 @media (max-width: 380px) {
   .mood-btn {
     padding: 14px 6px;
@@ -2339,7 +2339,7 @@ body::after {
 
 
 
-/* ==================== PHASE 3: HISTORY VIEW MOBILE ==================== */
+
 
 @media (max-width: 640px) {
   .history-view {
@@ -2389,7 +2389,7 @@ body::after {
 
   .search-input {
     padding: 14px 16px;
-    font-size: 16px; /* Better for mobile keyboards */
+    font-size: 16px; 
     border-radius: 14px;
   }
 
@@ -2398,7 +2398,7 @@ body::after {
     margin-bottom: 12px;
   }
 
-  /* Detail View - Full screen friendly on mobile */
+  
   .history-detail {
     max-width: 100%;
     padding-bottom: 80px;
@@ -2451,7 +2451,7 @@ body::after {
 }
 
 
-/* ==================== IMPROVED MOBILE SIDEBAR ==================== */
+
 
 @media (max-width: 640px) {
   .sidebar {
@@ -2473,7 +2473,7 @@ body::after {
     font-size: 22px;
   }
 
-  /* Reduce greeting space */
+  
   .sidebar-user {
     font-size: 13px;
     padding: 8px 12px;
@@ -2525,7 +2525,7 @@ body::after {
   }
 }
 
-/* Make active nav more prominent on mobile */
+
 @media (max-width: 640px) {
   .nav-active {
     background: var(--paper) !important;
@@ -2537,7 +2537,7 @@ body::after {
 
 
 
-/* ==================== PHASE 4: INSIGHTS PAGE MOBILE ==================== */
+
 
 @media (max-width: 640px) {
   .insights-view {
@@ -2548,7 +2548,7 @@ body::after {
     gap: 24px;
   }
 
-  /* Stats Grid - Stack better */
+  
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
@@ -2566,7 +2566,7 @@ body::after {
     font-size: 11px;
   }
 
-  /* Dashboard Grid - Stack vertically on mobile */
+  
   .dashboard-grid {
     grid-template-columns: 1fr !important;
     gap: 20px;
@@ -2607,6 +2607,11 @@ body::after {
     margin-top: 12px;
   }
 
+  .view-in-past:hover {
+  color: var(--terra-deep);
+  text-decoration: none !important;
+}
+
   /* Heatmap improvements */
   .heatmap-wrap {
     overflow-x: auto;
@@ -2637,7 +2642,7 @@ body::after {
   }
 }
 
-/* ==================== IMPROVED CONFIRM MODAL ==================== */
+
 
 .modal-actions {
   display: flex;
@@ -2692,7 +2697,7 @@ body::after {
   background: #9b2c2c !important;
 }
 
-/* On mobile - make buttons even easier to tap */
+
 @media (max-width: 640px) {
   .modal-card {
     margin: 20px;
@@ -2712,12 +2717,12 @@ body::after {
 }
 
 
-/* ==================== PHASE 5: AUTH PAGE MOBILE ==================== */
+
 
 @media (max-width: 640px) {
   .auth-container {
     padding: 16px 12px;
-    overflow: hidden;           /* Extra safety */
+    overflow: hidden;
   }
 
   .auth-card {
@@ -2828,7 +2833,7 @@ body::after {
   }
 }
 
-/* Extra small phones */
+
 @media (max-width: 380px) {
   .auth-container {
     padding: 12px 8px;

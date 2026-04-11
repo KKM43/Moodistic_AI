@@ -10,7 +10,7 @@ export const LANGUAGES: LanguageOption[] = [
 ]
 
 export const LANGUAGE_INSTRUCTIONS: Record<AppLanguage, string> = {
-  en: '' // English - no special instruction needed
+  en: '' 
 }
 
 export const OPENING_MESSAGES: Record<AppLanguage, string> = {
