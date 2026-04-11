@@ -15,25 +15,44 @@ if (!process.env.FRONTEND_URL) {
 
 const app = express();
 
+
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:4173",
+  "https://moodistic-omega.vercel.app",     
+  "https://moodistic.vercel.app",           
+  process.env.FRONTEND_URL,                 
+].filter(Boolean);
+
 app.use(
   cors({
     origin: function (origin, callback) {
-      const allowedOrigins = [
-        "http://localhost:5173",
-        "http://localhost:4173",
-        process.env.FRONTEND_URL,
-      ].filter(Boolean);
-
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
+        console.warn(`CORS blocked origin: ${origin}`);
         callback(new Error("Not allowed by CORS"));
       }
     },
-  }),
+    credentials: true,
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
 );
 
+
+app.options("*", cors());
+
 app.use(express.json({ limit: "10mb" }));
+
+
+app.options("*", (req, res) => {
+  res.header("Access-Control-Allow-Origin", req.headers.origin || "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.sendStatus(200);
+});
+
 app.set("trust proxy", 1);
 
 app.get("/", (_, res) => {
